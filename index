@@ -1,0 +1,355 @@
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Spese</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" class="container mx-auto p-4">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <button id="menuButton" class="p-2 hover:bg-gray-200 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+            <h1 class="text-2xl font-bold">Registro Spese</h1>
+            <div class="w-8"></div>
+        </header>
+
+        <!-- Menu Laterale -->
+        <div id="sideMenu" class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50 p-4 hidden">
+            <button id="closeMenu" class="absolute top-4 right-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="mt-12">
+                <h2 class="text-xl font-bold mb-4">Crea Causale</h2>
+                <input
+                    type="text"
+                    id="nuovaCausaleNome"
+                    placeholder="Nome causale"
+                    maxlength="100"
+                    class="w-full p-2 border rounded mb-2"
+                >
+                <select id="nuovaCausaleTipo" class="w-full p-2 border rounded mb-2">
+                    <option value="entrata">Entrata</option>
+                    <option value="uscita">Uscita</option>
+                </select>
+                <button
+                    id="aggiungiCausale"
+                    class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                >
+                    Aggiungi Causale
+                </button>
+
+                <h2 class="text-xl font-bold mt-8 mb-4">Gestione Causali</h2>
+                <select id="causalePerModifica" class="w-full p-2 border rounded mb-4">
+                    <option value="">Seleziona causale da modificare</option>
+                </select>
+                
+                <div id="formModificaCausale" class="hidden">
+                    <input
+                        type="text"
+                        id="modificaCausaleNome"
+                        placeholder="Nuovo nome causale"
+                        maxlength="100"
+                        class="w-full p-2 border rounded mb-2"
+                    >
+                    <select id="modificaCausaleTipo" class="w-full p-2 border rounded mb-2">
+                        <option value="entrata">Entrata</option>
+                        <option value="uscita">Uscita</option>
+                    </select>
+                    <div class="flex gap-2">
+                        <button
+                            id="salvaCausale"
+                            class="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                        >
+                            Salva
+                        </button>
+                        <button
+                            id="eliminaCausale"
+                            class="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                        >
+                            Elimina
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Principale -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Nuovo Movimento</h2>
+            <select id="causaleMovimento" class="w-full p-2 border rounded mb-2">
+                <option value="">Seleziona causale</option>
+            </select>
+            <input
+                type="number"
+                id="importoMovimento"
+                placeholder="Importo (€)"
+                step="0.01"
+                class="w-full p-2 border rounded mb-2"
+            >
+            <textarea
+                id="noteMovimento"
+                placeholder="Note (opzionale)"
+                class="w-full p-2 border rounded mb-2"
+            ></textarea>
+            <button
+                id="registraMovimento"
+                class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600"
+            >
+                Registra Movimento
+            </button>
+        </div>
+
+        <!-- Tabella Movimenti -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Movimenti Registrati</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th class="p-2 text-left">Data/Ora</th>
+                            <th class="p-2 text-left">Causale</th>
+                            <th class="p-2 text-left">Importo</th>
+                            <th class="p-2 text-left">Note</th>
+                            <th class="p-2 text-left">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabellaMovimenti"></tbody>
+                    <tfoot>
+                        <tr class="font-bold">
+                            <td colspan="2" class="p-2">Totale</td>
+                            <td id="totaleMovimenti" class="p-2"></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Form Email -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Invia Rapporto Email</h2>
+            <input
+                type="email"
+                id="emailDestinatario"
+                placeholder="Indirizzo email"
+                class="w-full p-2 border rounded mb-2"
+            >
+            <button
+                id="inviaEmail"
+                class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            >
+                Invia Rapporto
+            </button>
+        </div>
+
+        <!-- Pulsante Nuovo Periodo -->
+        <button
+            id="nuovoPeriodo"
+            class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
+        >
+            Nuovo Periodo
+        </button>
+    </div>
+
+    <script>
+        // Gestione dello stato dell'applicazione
+        let causali = JSON.parse(localStorage.getItem('causali') || '[]');
+        let movimenti = JSON.parse(localStorage.getItem('movimenti') || '[]');
+
+        // Elementi DOM
+        const sideMenu = document.getElementById('sideMenu');
+        const menuButton = document.getElementById('menuButton');
+        const closeMenu = document.getElementById('closeMenu');
+        const causalePerModifica = document.getElementById('causalePerModifica');
+        const formModificaCausale = document.getElementById('formModificaCausale');
+        const causaleMovimento = document.getElementById('causaleMovimento');
+
+        // Funzioni di utilità
+        function salvaStato() {
+            localStorage.setItem('causali', JSON.stringify(causali));
+            localStorage.setItem('movimenti', JSON.stringify(movimenti));
+            aggiornaSelettoriCausali();
+            aggiornaTabellaMovimenti();
+        }
+
+        function aggiornaSelettoriCausali() {
+            // Aggiorna il selettore per i movimenti
+            causaleMovimento.innerHTML = '<option value="">Seleziona causale</option>' +
+                causali.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+
+            // Aggiorna il selettore per la modifica
+            causalePerModifica.innerHTML = '<option value="">Seleziona causale da modificare</option>' +
+                causali.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        }
+
+        function aggiornaTabellaMovimenti() {
+            const tbody = document.getElementById('tabellaMovimenti');
+            const totale = document.getElementById('totaleMovimenti');
+
+            tbody.innerHTML = movimenti.map(m => `
+                <tr class="border-t">
+                    <td class="p-2">${m.data}</td>
+                    <td class="p-2">${m.causale}</td>
+                    <td class="p-2 ${m.tipo === 'entrata' ? 'text-green-600' : 'text-red-600'}">
+                        €${m.importo.toFixed(2)}
+                    </td>
+                    <td class="p-2">${m.note}</td>
+                    <td class="p-2">
+                        <button onclick="eliminaMovimento(${m.id})" class="text-red-500 hover:text-red-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            const totaleCalcolato = movimenti.reduce((acc, m) => 
+                acc + (m.tipo === 'entrata' ? m.importo : -m.importo), 0
+            );
+
+            totale.textContent = `€${totaleCalcolato.toFixed(2)}`;
+            totale.className = `p-2 ${totaleCalcolato >= 0 ? 'text-green-600' : 'text-red-600'}`;
+        }
+
+        // Event Listeners
+        menuButton.addEventListener('click', () => {
+            sideMenu.classList.remove('hidden');
+            sideMenu.classList.add('slide-in');
+        });
+
+        closeMenu.addEventListener('click', () => {
+            sideMenu.classList.add('hidden');
+            sideMenu.classList.remove('slide-in');
+        });
+
+        // Gestione Causali
+        document.getElementById('aggiungiCausale').addEventListener('click', () => {
+            const nome = document.getElementById('nuovaCausaleNome').value.trim();
+            const tipo = document.getElementById('nuovaCausaleTipo').value;
+
+            if (nome && nome.length <= 100) {
+                causali.push({ nome, tipo });
+                document.getElementById('nuovaCausaleNome').value = '';
+                salvaStato();
+            }
+        });
+
+        causalePerModifica.addEventListener('change', (e) => {
+            const causaleSelezionata = causali.find(c => c.nome === e.target.value);
+            if (causaleSelezionata) {
+                document.getElementById('modificaCausaleNome').value = causaleSelezionata.nome;
+                document.getElementById('modificaCausaleTipo').value = causaleSelezionata.tipo;
+                formModificaCausale.classList.remove('hidden');
+            } else {
+                formModificaCausale.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('salvaCausale').addEventListener('click', () => {
+            const vecchioNome = causalePerModifica.value;
+            const nuovoNome = document.getElementById('modificaCausaleNome').value.trim();
+            const nuovoTipo = document.getElementById('modificaCausaleTipo').value;
+
+            if (nuovoNome && nuovoNome.length <= 100) {
+                causali = causali.map(c => 
+                    c.nome === vecchioNome ? { nome: nuovoNome, tipo: nuovoTipo } : c
+                );
+
+                // Aggiorna anche i movimenti associati
+                movimenti = movimenti.map(m => 
+                    m.causale === vecchioNome 
+                        ? { ...m, causale: nuovoNome, tipo: nuovoTipo }
+                        : m
+                );
+
+                formModificaCausale.classList.add('hidden');
+                causalePerModifica.value = '';
+                salvaStato();
+            }
+        });
+
+        document.getElementById('eliminaCausale').addEventListener('click', () => {
+            const nome = causalePerModifica.value;
+            if (nome) {
+                causali = causali.filter(c => c.nome !== nome);
+                formModificaCausale.classList.add('hidden');
+                causalePerModifica.value = '';
+                salvaStato();
+            }
+        });
+
+        // Gestione Movimenti
+        document.getElementById('registraMovimento').addEventListener('click', () => {
+            const causaleNome = causaleMovimento.value;
+            const importo = parseFloat(document.getElementById('importoMovimento').value);
+            const note = document.getElementById('noteMovimento').value;
+
+            if (causaleNome && !isNaN(importo)) {
+                const causale = causali.find(c => c.nome === causaleNome);
+                if (causale) {
+                    movimenti.push({
+                        id: Date.now(),
+                        data: new Date().toLocaleString(),
+                        causale: causaleNome,
+                        tipo: causale.tipo,
+                        importo,
+                        note
+                    });
+                    document.getElementById('importoMovimento').value = '';
+                    document.getElementById('noteMovimento').value = '';
+                    salvaStato();
+                }
+            }
+        });
+
+        window.eliminaMovimento = function(id) {
+            movimenti = movimenti.filter(m => m.id !== id);
+            salvaStato();
+        };
+
+        document.getElementById('inviaEmail').addEventListener('click', () => {
+            const email = document.getElementById('emailDestinatario').value;
+            if (email) {
+                const subject = `Totale Movimenti Periodo da ${movimenti[0].data} a ${movimenti[movimenti.length - 1].data}`;
+                const body = movimenti.map(m => `${m.data}|${m.causale}|${m.tipo}|${m.importo.toFixed(2)}|${m.note}`).join('\n');
+                window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            }
+        });
+
+        document.getElementById('nuovoPeriodo').addEventListener('click', () => {
+            if (confirm('Sei sicuro di voler cancellare le registrazioni e cominciare un nuovo periodo?')) {
+                movimenti = [];
+                salvaStato();
+            }
+        });
+
+        // Inizializzazione
+        aggiornaSelettoriCausali();
+        aggiornaTabellaMovimenti();
+    </script>
+</body>
+</html>
